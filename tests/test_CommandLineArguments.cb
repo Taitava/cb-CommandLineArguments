@@ -1,0 +1,72 @@
+
+// These tests can be run with cbUnit: https://github.com/Taitava/cbUnit
+
+Include "CommandLineArguments.cb"
+
+Const CBUNIT_FORCE_VARIABLE_DECLARATION = 0
+
+
+Function test_DefineCommandLineArguments()
+	Dim valid_argument_definition$, valid_argument_definition_quoted$
+	
+	// These definitions should _Not_ work:
+	assertNot(DefineCommandLineArguments("argument-without-dashes-at-the-beginning"), "DefineCommandLineArguments() should n"+"ot accept arguments that do n"+"ot begin with --")
+	assertNot(DefineCommandLineArguments("--valid-argument argument-without-dashes-at-the-beginning"), "DefineCommandLineArguments() should n"+"ot accept arguments that do n"+"ot begin with --")
+	assertNot(DefineCommandLineArguments("--"), "DefineCommandLineArguments() should n"+"ot accept arguments that do n"+"ot have a nmae After --")
+	assertNot(DefineCommandLineArguments("--valid-argument --"), "DefineCommandLineArguments() should n"+"ot accept arguments that do n"+"ot have a nmae After --")
+	
+	// These definitions _should_ work:
+	valid_argument_definition = "--valid-argument:v+ -a -b+ --long-argument-without-value"
+	valid_argument_definition_quoted = chr(34) + valid_argument_definition + chr(34)
+	If assert(DefineCommandLineArguments(valid_argument_definition), "DefineCommandLineArguments() should understand "+valid_argument_definition_quoted) Then
+		assertEquals(CountCommandLineArgumentsDefined, 4, "DefineCommandLineArguments() defined a$ arguments, but it should define b$ arguments fo"+"r "+valid_argument_definition_quoted)
+	EndIf
+	
+EndFunction
+
+
+
+//
+// GetWord2() and CountWords2()
+// These are copied here because they are not included in CommandLineArguments.cb but CommandLineArguments needs these during testing.
+//
+
+// Copied 2021-02-12 from http://www.cbrepository.com/codes/code/11/
+// Created 2011-04-09 by KilledWhale
+// Modifications:
+//  - added $ to the GetWord2() function name. No other modifications
+//  - Made the function FVD compatible
+Function GetWord2$(a As String, b As Integer, c As String)
+   Dim l, i, q // Force Variable Declaration
+   
+   l = Len(c) // Otetaan pituus muuttujaan optimoinniksi
+	For i As Integer = 2 To b // Käydään läpi kaikki ei-halutut sanat
+	  q = InStr(a, c) // Katsotaan löytyykö erotinta
+		If q Then // Löytyi
+			a = Mid(a, q + l) // Otetaan alkuosa pois erottimeen asti
+	  EndIf
+	Next i
+
+   q = InStr(a, c) // Katsotaan vielä löytyykö erotinta
+	If q Then // Jos löytyi
+		Return Mid(a, 1, q - 1) // Palautetaan tekstiä seuraavaan erottimeen asti
+	Else // Ei löytynyt
+		Return Mid(a, 1) // Palautetaan loppuosa
+	EndIf
+EndFunction
+
+// Copied 2021-02-12 from http://www.cbrepository.com/codes/code/11/
+// Created 2011-04-09 by KilledWhale
+// Modifications: Made the function FVD compatible
+Function CountWords2(a As String, c As String)
+   Dim n, aa // Force Variable Declaration
+   
+   Repeat
+	  n + 1 // Kasvatetaan arvoa, että montako ON löydetty
+	  aa = InStr(a, c, aa + 1) // Katsotaan löytyykö erotinta
+	  If Not aa Then // Jos ei löydy
+		 Exit // Poistutaan
+	  EndIf
+   Forever
+   Return n // Palautetaan esiintymien määrä
+EndFunction

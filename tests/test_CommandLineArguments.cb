@@ -61,6 +61,22 @@ Function test_ParseCommandLineArguments()
 	assertEquals(getCommandLineArgumentValue("-v"), "value\with\backslashes")
 EndFunction
 
+Function test_getCommandLineArgumentValue()
+	// getCommandLineArgumentValue() is actually already tested by test_ParseCommandLineArguments(), but here are some extensive assertions.
+	
+	// First define that our program has been called with the argument "-v value".
+	ParseCommandLineArguments("-v value")
+	
+	// Test that we get the same value with both Short And long argument name
+	assertEquals(getCommandLineArgumentValue("--valid-argument"), "value", "getCommandLineArgumentValue() should Return 'value' For --valid-argument.")
+	assertEquals(getCommandLineArgumentValue("-v"), "value", "getCommandLineArgumentValue() should Return 'value' For -v.")
+	
+	// Test the we get the Default value If an argument is Not defined
+	assertEquals(getCommandLineArgumentValue("-b", "Default"), "Default", "getCommandLineArgumentValue() should Return 'Default' because -b is Not present.")
+	assertEquals(getCommandLineArgumentValue("--undefined-argument", "Default"), "Default", "getCommandLineArgumentValue() should Return 'Default' because --undefined-argument is Not even defined.")
+	
+EndFunction
+
 Function test_isCommandLineArgumentPresent()
 	// First define that our program has been called with the argument "-v value".
 	ParseCommandLineArguments("-v value")

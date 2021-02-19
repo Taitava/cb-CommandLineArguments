@@ -3,7 +3,7 @@
 
 Include "CommandLineArguments.cb"
 
-Const CBUNIT_FORCE_VARIABLE_DECLARATION = 0
+Const CBUNIT_FORCE_VARIABLE_DECLARATION = 1
 
 
 Function test_DefineCommandLineArguments()

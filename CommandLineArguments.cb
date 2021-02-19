@@ -21,6 +21,7 @@ Type CommandLineArgument
 	Field present // 0: Argument Not found in CommandLine(). 1: Argument was found.
 EndType
 
+Global CommandLineAcceptNamelessArguments // Defaults to false
 Global CountCommandLineNamelessArgumentsPresent
 
 Type CommandLineNamelessArgument
@@ -35,16 +36,23 @@ EndType
 //**
 // Defines named commandline arguments. Nameless arguments are not predefined, they can be accessed
 //
-// @param string arguments Denotes all possible named arguments in a format like this: "--argument --another-argument --argument-with-shortcut-letter:a --argument-requiring-value+ -b" The last argument "-b" is an example of an argument that does not have a long name alias.
+// @param string arguments Denotes all possible named arguments in a format like this: "--argument --another-argument --argument-with-shortcut-letter:a --argument-requiring-value+ -b" The last argument "-b" is an example of an argument that does not have a long name alias. If you put * as the _last_ word, nameless arguments will be accepted, otherwise not.
 // @return bool True if parsing arguments succeeded, false if some argument did not begin with "--" or "-" or if you defined "-" or "--" without a trailing argument name.
 //*
 Function DefineCommandLineArguments(arguments$)
 	Dim i, count_arguments, argument$, has_value, long_name$, short_name$
 	
 	ResetCommandLineArguments()
+	CommandLineAcceptNamelessArguments = False
 	count_arguments = CountWords2(arguments, " ")
 	For i = 1 To count_arguments
 		argument = GetWord2(arguments, i, " ")
+		
+		// Check If the _last_ argument is "+" without anything Else in it.
+		If "*" = argument And i = count_arguments Then
+			// This "*" as the Last argument denotes that namesless arguments are allowed.
+			CommandLineAcceptNamelessArguments = True
+		EndIf
 
 		// Determine If the argument should have a value
 		has_value = 0
@@ -136,6 +144,7 @@ Function ParseCommandLineArguments(command_line$="")
 					If argument\requires_value Then collect_value = True
 				Else
 					// Exception: this is Not actually an argument name - it's a value instead, For a nameless argument.
+					If Not CommandLineAcceptNamelessArguments Then Return False // Nameless arguments Not wanted
 					NewCommandLineNamelessArgument(argument_name)
 				EndIf
 				argument_name = "" // Reset so that the Next argument name does Not begin with previous argument name.

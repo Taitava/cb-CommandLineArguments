@@ -92,6 +92,12 @@ Function test_isCommandLineArgumentPresent()
 EndFunction
 
 
+//
+// TODO: Add tests for the rest of the functions in CommandLineArguments.cb, both public and internal ones.
+//
+
+
+
 
 //
 // GetWord2() and CountWords2()

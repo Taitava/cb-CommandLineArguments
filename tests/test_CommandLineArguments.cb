@@ -4,10 +4,12 @@
 Include "CommandLineArguments.cb"
 
 Const CBUNIT_FORCE_VARIABLE_DECLARATION = 1
+Const CBUNIT_STOP_AT = "function" // If test_DefineCommandLineArguments() fails, do not call test_ParseCommandLineArguments().
 
+Const valid_argument_definition = "--valid-argument:v+ -a -b+ --long-argument-without-value"
+Global valid_argument_definition_quoted : valid_argument_definition_quoted = Chr(34) + valid_argument_definition + Chr(34)
 
 Function test_DefineCommandLineArguments()
-	Dim valid_argument_definition$, valid_argument_definition_quoted$
 	
 	// These definitions should _Not_ work:
 	assertNot(DefineCommandLineArguments("argument-without-dashes-at-the-beginning"), "DefineCommandLineArguments() should n"+"ot accept arguments that do n"+"ot begin with --")
@@ -16,12 +18,39 @@ Function test_DefineCommandLineArguments()
 	assertNot(DefineCommandLineArguments("--valid-argument --"), "DefineCommandLineArguments() should n"+"ot accept arguments that do n"+"ot have a nmae After --")
 	
 	// These definitions _should_ work:
-	valid_argument_definition = "--valid-argument:v+ -a -b+ --long-argument-without-value"
-	valid_argument_definition_quoted = chr(34) + valid_argument_definition + chr(34)
 	If assert(DefineCommandLineArguments(valid_argument_definition), "DefineCommandLineArguments() should understand "+valid_argument_definition_quoted) Then
 		assertEquals(CountCommandLineArgumentsDefined, 4, "DefineCommandLineArguments() defined a$ arguments, but it should define b$ arguments fo"+"r "+valid_argument_definition_quoted)
 	EndIf
 	
+EndFunction
+
+Function test_ParseCommandLineArguments()
+	// Setup
+	DefineCommandLineArguments(valid_argument_definition) // Actually we should already have a definition like this, but do it just in Case test_DefineCommandLineArguments() was Not called For some reason.
+	
+	// These arguments should fail:
+	assertNot(ParseCommandLineArguments("--undefined-argument"), "ParseCommandLineArguments() should n"+"ot accept undefined argument names.")
+	assertNot(ParseCommandLineArguments("-u"), "ParseCommandLineArguments() should n"+"ot accept undefined argument names.")
+	assertNot(ParseCommandLineArguments("-v"), "Argument -v is defined to have a value associated with it. ParseCommandLineArguments() should n"+"ot accept a CommandLine with -v without a value.")
+	assertNot(ParseCommandLineArguments("invalid-value"), "ParseCommandLineArguments() should n"+"ot accept nameless arguments because DefineCommandLineArguments() was Not called with a definition String ending with a *")
+	assertNot(ParseCommandLineArguments("-v valid-value invalid-value"), "ParseCommandLineArguments() should n"+"ot accept nameless arguments because DefineCommandLineArguments() was Not called with a definition String ending with a *")
+	
+	// Change so that nameless arguments will be allowed
+	CommandLineAcceptNamelessArguments = True
+	
+	// These arguments should be ok:
+	assert(ParseCommandLineArguments("nameless-argument-value"), "ParseCommandLineArguments() should accept nameless arguments because it's now enabled.")
+	assertEquals(CountCommandLineNamelessArgumentsPresent, 1, "We should have one nameless argument.")
+	assert(ParseCommandLineArguments("-v valid-value nameless-argument-value"), "ParseCommandLineArguments() should accept nameless arguments because it's now enabled.")
+	assertEquals(CountCommandLineNamelessArgumentsPresent, 1, "We should have one nameless argument.")
+	
+	// Check quotes And backslash
+	assert(ParseCommandLineArguments("-v "+Chr(34)+"value in quotes"+Chr(34)), "ParseCommandLineArguments() should be able To handle values with spaces enclosed in quotes.")
+	assertEquals(getCommandLineArgumentValue("-v"), "value in quotes") // Note: No quotes around the value!
+	assert(ParseCommandLineArguments("-v value-with\"+Chr(34)+"quote-in-it"), "ParseCommandLineArguments() should be able To handle values with escaped quotes.")
+	assertEquals(getCommandLineArgumentValue("-v"), "value-with"+Chr(34)+"quote-in-it") // Note: one quote in the middle, but no \
+	assert(ParseCommandLineArguments("-v value\\with\\backslashes"), "ParseCommandLineArguments() should be able To handle values with escaped backslashes.")
+	assertEquals(getCommandLineArgumentValue("-v"), "value\with\backslashes")
 EndFunction
 
 

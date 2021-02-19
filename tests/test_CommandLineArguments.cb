@@ -4,91 +4,91 @@
 Include "CommandLineArguments.cb"
 
 Const CBUNIT_FORCE_VARIABLE_DECLARATION = 1
-Const CBUNIT_STOP_AT = "function" // If test_DefineCommandLineArguments() fails, do not call test_ParseCommandLineArguments().
+Const CBUNIT_STOP_AT = "function" // If test_DefineCommandLineOptions() fails, do not call test_ParseCommandLineOptions().
 
-Const valid_argument_definition = "--valid-argument:v+ -a -b+ --long-argument-without-value"
-Global valid_argument_definition_quoted : valid_argument_definition_quoted = Chr(34) + valid_argument_definition + Chr(34)
+Const valid_option_definition = "--valid-option:v+ -a -b+ --long-option-without-argument"
+Global valid_option_definition_quoted : valid_option_definition_quoted = Chr(34) + valid_option_definition + Chr(34)
 
 
 //**
-// This function is every time before calling any of the test_*() functions.
+// This function is called every time before calling any of the test_*() functions.
 //*
 Function hook_SetupTest(function_name$)
-	If function_name <> "test_DefineCommandLineArguments" Then // No need To do this For test_DefineCommandLineArguments()
-		DefineCommandLineArguments(valid_argument_definition) // Actually we should already have a definition like this, but do it just in Case test_DefineCommandLineArguments() was Not called For some reason.
+	If function_name <> "test_DefineCommandLineOptions" Then // No need To do this For test_DefineCommandLineOptions()
+		DefineCommandLineOptions(valid_option_definition) // Actually we should already have a definition like this, but do it just in Case test_DefineCommandLineOptions() was Not called For some reason.
 	EndIf
 EndFunction
 
-Function test_DefineCommandLineArguments()
+Function test_DefineCommandLineOptions()
 	
 	// These definitions should _Not_ work:
-	assertNot(DefineCommandLineArguments("argument-without-dashes-at-the-beginning"), "DefineCommandLineArguments() should n"+"ot accept arguments that do n"+"ot begin with --")
-	assertNot(DefineCommandLineArguments("--valid-argument argument-without-dashes-at-the-beginning"), "DefineCommandLineArguments() should n"+"ot accept arguments that do n"+"ot begin with --")
-	assertNot(DefineCommandLineArguments("--"), "DefineCommandLineArguments() should n"+"ot accept arguments that do n"+"ot have a nmae After --")
-	assertNot(DefineCommandLineArguments("--valid-argument --"), "DefineCommandLineArguments() should n"+"ot accept arguments that do n"+"ot have a nmae After --")
+	assertNot(DefineCommandLineOptions("option-without-dashes-at-the-beginning"), "DefineCommandLineOptions() should n"+"ot accept options that do n"+"ot begin with --")
+	assertNot(DefineCommandLineOptions("--valid-option option-without-dashes-at-the-beginning"), "DefineCommandLineOptions() should n"+"ot accept options that do n"+"ot begin with --")
+	assertNot(DefineCommandLineOptions("--"), "DefineCommandLineOptions() should n"+"ot accept options that do n"+"ot have a name After --")
+	assertNot(DefineCommandLineOptions("--valid-option --"), "DefineCommandLineOptions() should n"+"ot accept options that do n"+"ot have a name After --")
 	
 	// These definitions _should_ work:
-	If assert(DefineCommandLineArguments(valid_argument_definition), "DefineCommandLineArguments() should understand "+valid_argument_definition_quoted) Then
-		assertEquals(CountCommandLineArgumentsDefined, 4, "DefineCommandLineArguments() defined a$ arguments, but it should define b$ arguments fo"+"r "+valid_argument_definition_quoted)
+	If assert(DefineCommandLineOptions(valid_option_definition), "DefineCommandLineOptions() should understand "+valid_option_definition_quoted) Then
+		assertEquals(CountCommandLineOptionsDefined, 4, "DefineCommandLineOptions() defined a$ options, but it should define b$ options fo"+"r "+valid_option_definition_quoted)
 	EndIf
 	
 EndFunction
 
-Function test_ParseCommandLineArguments()
+Function test_ParseCommandLineOptions()
 	
-	// These arguments should fail:
-	assertNot(ParseCommandLineArguments("--undefined-argument"), "ParseCommandLineArguments() should n"+"ot accept undefined argument names.")
-	assertNot(ParseCommandLineArguments("-u"), "ParseCommandLineArguments() should n"+"ot accept undefined argument names.")
-	assertNot(ParseCommandLineArguments("-v"), "Argument -v is defined to have a value associated with it. ParseCommandLineArguments() should n"+"ot accept a CommandLine with -v without a value.")
-	assertNot(ParseCommandLineArguments("invalid-value"), "ParseCommandLineArguments() should n"+"ot accept nameless arguments because DefineCommandLineArguments() was Not called with a definition String ending with a *")
-	assertNot(ParseCommandLineArguments("-v valid-value invalid-value"), "ParseCommandLineArguments() should n"+"ot accept nameless arguments because DefineCommandLineArguments() was Not called with a definition String ending with a *")
+	// These options should fail:
+	assertNot(ParseCommandLineOptions("--undefined-option"), "ParseCommandLineOptions() should n"+"ot accept undefined option names.")
+	assertNot(ParseCommandLineOptions("-u"), "ParseCommandLineOptions() should n"+"ot accept undefined option names.")
+	assertNot(ParseCommandLineOptions("-v"), "Option -v is defined to have an argument associated with it. ParseCommandLineOptions() should n"+"ot accept a CommandLine with -v without an argument.")
+	assertNot(ParseCommandLineOptions("invalid-argument"), "ParseCommandLineOptions() should n"+"ot accept non-option arguments because DefineCommandLineOptions() was Not called with a definition String ending with a *")
+	assertNot(ParseCommandLineOptions("-v valid-argument invalid-argument"), "ParseCommandLineOptions() should n"+"ot accept non-option arguments because DefineCommandLineOptions() was Not called with a definition String ending with a *")
 	
-	// Change so that nameless arguments will be allowed
-	CommandLineAcceptNamelessArguments = True
+	// Change so that non-option arguments will be allowed
+	CommandLineAcceptNonOptionArguments = True
 	
-	// These arguments should be ok:
-	assert(ParseCommandLineArguments("nameless-argument-value"), "ParseCommandLineArguments() should accept nameless arguments because it's now enabled.")
-	assertEquals(CountCommandLineNamelessArgumentsPresent, 1, "We should have one nameless argument.")
-	assert(ParseCommandLineArguments("-v valid-value nameless-argument-value"), "ParseCommandLineArguments() should accept nameless arguments because it's now enabled.")
-	assertEquals(CountCommandLineNamelessArgumentsPresent, 1, "We should have one nameless argument.")
+	// These options should be ok:
+	assert(ParseCommandLineOptions("nonoption-argument"), "ParseCommandLineOptions() should accept non-option arguments because it's now enabled.")
+	assertEquals(CountCommandLineNonOptionArgumentsPresent, 1, "We should have one non-option argument.")
+	assert(ParseCommandLineOptions("-v valid-argument nonoption-argument"), "ParseCommandLineOptions() should accept non-option arguments because it's now enabled.")
+	assertEquals(CountCommandLineNonOptionArgumentsPresent, 1, "We should have one non-option argument.")
 	
 	// Check quotes And backslash
-	assert(ParseCommandLineArguments("-v "+Chr(34)+"value in quotes"+Chr(34)), "ParseCommandLineArguments() should be able To handle values with spaces enclosed in quotes.")
-	assertEquals(getCommandLineArgumentValue("-v"), "value in quotes") // Note: No quotes around the value!
-	assert(ParseCommandLineArguments("-v value-with\"+Chr(34)+"quote-in-it"), "ParseCommandLineArguments() should be able To handle values with escaped quotes.")
-	assertEquals(getCommandLineArgumentValue("-v"), "value-with"+Chr(34)+"quote-in-it") // Note: one quote in the middle, but no \
-	assert(ParseCommandLineArguments("-v value\\with\\backslashes"), "ParseCommandLineArguments() should be able To handle values with escaped backslashes.")
-	assertEquals(getCommandLineArgumentValue("-v"), "value\with\backslashes")
+	assert(ParseCommandLineOptions("-v "+Chr(34)+"argument in quotes"+Chr(34)), "ParseCommandLineOptions() should be able To handle arguments with spaces enclosed in quotes.")
+	assertEquals(getCommandLineArgument("-v"), "argument in quotes") // Note: No quotes around the argument!
+	assert(ParseCommandLineOptions("-v argument-with\"+Chr(34)+"quote-in-it"), "ParseCommandLineOptions() should be able To handle arguments with escaped quotes.")
+	assertEquals(getCommandLineArgument("-v"), "argument-with"+Chr(34)+"quote-in-it") // Note: one quote in the middle, but no \
+	assert(ParseCommandLineOptions("-v argument\\with\\backslashes"), "ParseCommandLineOptions() should be able To handle arguments with escaped backslashes.")
+	assertEquals(getCommandLineArgument("-v"), "argument\with\backslashes")
 EndFunction
 
-Function test_getCommandLineArgumentValue()
-	// getCommandLineArgumentValue() is actually already tested by test_ParseCommandLineArguments(), but here are some extensive assertions.
+Function test_getCommandLineArgument()
+	// getCommandLineArgument() is actually already tested by test_ParseCommandLineOptions(), but here are some extensive assertions.
 	
-	// First define that our program has been called with the argument "-v value".
-	ParseCommandLineArguments("-v value")
+	// First define that our program has been called with the option "-v argument".
+	ParseCommandLineOptions("-v argument")
 	
-	// Test that we get the same value with both Short And long argument name
-	assertEquals(getCommandLineArgumentValue("--valid-argument"), "value", "getCommandLineArgumentValue() should Return 'value' For --valid-argument.")
-	assertEquals(getCommandLineArgumentValue("-v"), "value", "getCommandLineArgumentValue() should Return 'value' For -v.")
+	// Test that we get the same argument with both Short And long option name
+	assertEquals(getCommandLineArgument("--valid-option"), "argument", "getCommandLineArgument() should Return 'argument' For --valid-option. Returned a$ instead.")
+	assertEquals(getCommandLineArgument("-v"), "argument", "getCommandLineArgument() should Return 'argument' For -v.")
 	
-	// Test the we get the Default value If an argument is Not defined
-	assertEquals(getCommandLineArgumentValue("-b", "Default"), "Default", "getCommandLineArgumentValue() should Return 'Default' because -b is Not present.")
-	assertEquals(getCommandLineArgumentValue("--undefined-argument", "Default"), "Default", "getCommandLineArgumentValue() should Return 'Default' because --undefined-argument is Not even defined.")
+	// Test the we get the Default argument If an option is Not present Or defined
+	assertEquals(getCommandLineArgument("-b", "Default"), "Default", "getCommandLineArgument() should Return 'Default' because -b is Not present.")
+	assertEquals(getCommandLineArgument("--undefined-option", "Default"), "Default", "getCommandLineArgument() should Return 'Default' because --undefined-option is Not even defined.")
 	
 EndFunction
 
-Function test_isCommandLineArgumentPresent()
-	// First define that our program has been called with the argument "-v value".
-	ParseCommandLineArguments("-v value")
+Function test_isCommandLineOptionPresent()
+	// First define that our program has been called with the option "-v argument".
+	ParseCommandLineOptions("-v argument")
 	
-	// These arguments should be present:
-	assert(isCommandLineArgumentPresent("-v"), "isCommandLineArgumentPresent() should notice that -v is present.")
-	assert(isCommandLineArgumentPresent("--valid-argument"), "isCommandLineArgumentPresent() should notice that --valid-argument is present.")
+	// These options should be present:
+	assert(isCommandLineOptionPresent("-v"), "isCommandLineOptionPresent() should notice that -v is present.")
+	assert(isCommandLineOptionPresent("--valid-option"), "isCommandLineOptionPresent() should notice that --valid-option is present.")
 	
-	// These arguments should Not be present:
-	assertNot(isCommandLineArgumentPresent("--non-existing-argument"), "isCommandLineArgumentPresent() should notice that --non-existing-argument is not present.")
-	assertNot(isCommandLineArgumentPresent("-a"), "isCommandLineArgumentPresent() should notice that -a is not present.")
-	assertNot(isCommandLineArgumentPresent("-b"), "isCommandLineArgumentPresent() should notice that -b is not present.")
+	// These options should Not be present:
+	assertNot(isCommandLineOptionPresent("--non-existing-option"), "isCommandLineOptionPresent() should notice that --non-existing-option is not present.")
+	assertNot(isCommandLineOptionPresent("-a"), "isCommandLineOptionPresent() should notice that -a is not present.")
+	assertNot(isCommandLineOptionPresent("-b"), "isCommandLineOptionPresent() should notice that -b is not present.")
 EndFunction
 
 

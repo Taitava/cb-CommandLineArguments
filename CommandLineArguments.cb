@@ -9,23 +9,23 @@
 // DEFINITIONS
 //
 
-Global CountCommandLineArgumentsDefined
-Global CountCommandLineArgumentsPresent
+Global CountCommandLineOptionsDefined
+Global CountCommandLineOptionsPresent
 
-Type CommandLineArgument
+Type CommandLineOption
 	Field id // Result of ConvertToInteger()
 	Field long_name$ // Multicharacter name. Optional If short_name$ is defined.
 	Field short_name$ // Single character name. Optional If long_name$ is defined.
-	Field requires_value // 1 Or 0 depending ON If this argument requires a value After it. Values cannot be optional. If an argument can take a value, a value must be present every Time the argument name is present.
-	Field value$ // Empty If has_value is 0.
-	Field present // 0: Argument Not found in CommandLine(). 1: Argument was found.
+	Field requires_argument // 1 Or 0 depending ON If this option requires an argument After it. Arguments cannot be optional. If an option can take an argument, an argument must be present every Time the option is present.
+	Field argument$ // Empty If requires_argument is 0.
+	Field present // 0: Option Not found in CommandLine(). 1: Option was found.
 EndType
 
-Global CommandLineAcceptNamelessArguments // Defaults to false
-Global CountCommandLineNamelessArgumentsPresent
+Global CommandLineAcceptNonOptionArguments // Defaults to false
+Global CountCommandLineNonOptionArgumentsPresent
 
-Type CommandLineNamelessArgument
-	Field value$
+Type CommandLineNonOptionArgument
+	Field argument$
 EndType
 
 
@@ -34,52 +34,52 @@ EndType
 //
 
 //**
-// Defines named commandline arguments. Nameless arguments are not predefined, they can be accessed
+// Defines commandline options (an 'option' has a name and may have an 'argument', i.e. value). Non-option arguments are not predefined, they can be accessed currently only via the CommandLineNonOptionArgument type list (@see https://github.com/Taitava/cb-CommandLineArguments/issues/6).
 //
-// @param string arguments Denotes all possible named arguments in a format like this: "--argument --another-argument --argument-with-shortcut-letter:a --argument-requiring-value+ -b" The last argument "-b" is an example of an argument that does not have a long name alias. If you put * as the _last_ word, nameless arguments will be accepted, otherwise not.
-// @return bool True if parsing arguments succeeded, false if some argument did not begin with "--" or "-" or if you defined "-" or "--" without a trailing argument name.
+// @param string arguments Denotes all possible named arguments in a format like this: "--option --another-option --option-with-shortcut-letter:a --option-requiring-argument+ -b" The last option "-b" is an example of an option that does not have a long name alias. If you put * as the _last_ word, non-option arguments will be accepted, otherwise not.
+// @return bool True if parsing options succeeded, false if some option did not begin with "--" or "-" or if you defined "-" or "--" without a trailing option name.
 //*
-Function DefineCommandLineArguments(arguments$)
-	Dim i, count_arguments, argument$, has_value, long_name$, short_name$
+Function DefineCommandLineOptions(options$)
+	Dim i, count_options, option$, requires_argument, long_name$, short_name$
 	
-	ResetCommandLineArguments()
-	CommandLineAcceptNamelessArguments = False
-	count_arguments = CountWords2(arguments, " ")
-	For i = 1 To count_arguments
-		argument = GetWord2(arguments, i, " ")
+	ResetCommandLineOptions()
+	CommandLineAcceptNonOptionArguments = False
+	count_options = CountWords2(options, " ")
+	For i = 1 To count_options
+		option = GetWord2(options, i, " ")
 		
-		// Check If the _last_ argument is "+" without anything Else in it.
-		If "*" = argument And i = count_arguments Then
-			// This "*" as the Last argument denotes that namesless arguments are allowed.
-			CommandLineAcceptNamelessArguments = True
+		// Check If the _last_ option is "+" without anything Else in it.
+		If "*" = option And i = count_options Then
+			// This "*" as the Last option denotes that non-option arguments are allowed.
+			CommandLineAcceptNonOptionArguments = True
 		EndIf
 
-		// Determine If the argument should have a value
-		has_value = 0
-		If Right(argument, 1) = "+" Then
-			has_value = True
-			argument = Left(argument, Len(argument)-1) // Remove the +
+		// Determine If the option should have an argument
+		requires_argument = 0
+		If Right(option, 1) = "+" Then
+			requires_argument = True
+			option = Left(option, Len(option)-1) // Remove the +
 		EndIf
 		
 		// Determine the argument's name
 		short_name = ""
 		long_name = ""
-		If "--" = Left(argument, 2) Then
-			// Argument has a long name
+		If "--" = Left(option, 2) Then
+			// Option has a long name
 			// Check If it has a Short alternative too
-			If InStr(argument, ":") Then
+			If InStr(option, ":") Then
 				// Both long And Short names are defined
-				long_name = GetWord2(argument, 1, ":")
-				short_name = GetWord2(argument, 2, ":")
-				If "-" <> Left(short_name, 1) Then short_name = "-" + short_name // Deinition can be either "--argument-name:a" Or "--argument-name:-a".
+				long_name = GetWord2(option, 1, ":")
+				short_name = GetWord2(option, 2, ":")
+				If "-" <> Left(short_name, 1) Then short_name = "-" + short_name // Definition can be either "--option-name:a" Or "--option-name:-a".
 			Else
 				// Only a long name is defined
-				long_name = argument
+				long_name = option
 			EndIf
 			If long_name = "--" Then Return False // Name cannot be empty, it needs letters too.
-		ElseIf "-" = Left(argument, 1) Then
+		ElseIf "-" = Left(option, 1) Then
 			// The argument has only a Short name
-			short_name = argument
+			short_name = option
 			If short_name = "-" Then Return False // Name cannot be empty, it needs letters too.
 		Else
 			// If the argument name does Not begin with "--" Or "-", The arguments String is malformed.
@@ -87,7 +87,7 @@ Function DefineCommandLineArguments(arguments$)
 		EndIf
 		
 		// Define the argument
-		NewCommandLineArgument(long_name, short_name, has_value)
+		NewCommandLineOption(long_name, short_name, requires_argument)
 	Next i
 	
 	Return True
@@ -95,106 +95,106 @@ EndFunction
 
 //**
 // @param string command_line If blank (default), will get value from CommandLine(). This offers a substitute for CommandLine() if you want to do some testing or override arguments.
-// @return bool True if all given arguments exist in predefined (named) arguments. False if there was an argument that is not predefined. Exception: arguments without a name cannot be predefined and they are always accepted (they are collected to CommandLineNamelessArgument type list)
+// @return bool True if all given options exist in predefined options. False if there was an option that is not predefined. Note: non-option arguments cannot be predefined and they are accepted if CommandLineAcceptNonOptionArguments is true. (they are collected to CommandLineNonOptionArgument type list)
 //*
-Function ParseCommandLineArguments(command_line$="")
-	Dim argument_name$, argument_value$, old_character$, character$, quote_open, collect_value, end_of_arguments, i
-	Dim argument.CommandLineArgument
+Function ParseCommandLineOptions(command_line$="")
+	Dim option_name$, option_argument$, old_character$, character$, quote_open, collect_argument, end_of_options, i
+	Dim option.CommandLineOption
 
-	ResetCommandLineArguments(False) // False: do Not reset the definitons, but reset values And 'present' flags.
-	ResetCommandLineNamelessArguments()
+	ResetCommandLineOptions(False) // False: do Not reset the definitons, but reset arguments And 'present' flags.
+	ResetCommandLineNonOptionArguments()
 	If "" = command_line Then command_line = CommandLine()
 	command_line = Trim(command_line)
 	If "" = command_line Then Return True // Nothing To parse, all good.
 	
-	command_line = Replace(command_line, "\\", Chr(1))
+	command_line = Replace(command_line, "\\", Chr(1)) // TODO: Use ParseCommandLineOptions_Escape() instead. It will handle the below Line too.
     command_line = Replace(command_line, "\"+chr(34), Chr(2))
     old_character = " "
     quote_open = False
-	collect_value = False
-	end_of_arguments = False
-    For i = 1 To Len(command_line) + 1 // +1 so that we can detect end_of_arguments
+	collect_argument = False
+	end_of_options = False
+    For i = 1 To Len(command_line) + 1 // +1 so that we can detect end_of_options
 		If i <= Len(command_line) Then
 			character$ = Mid(command_line,i,1)
 		Else
 			character = ""
-			end_of_arguments = True
+			end_of_options = True
 		EndIf
         If character=Chr(34) Then
             quote_open = Not quote_open
-        ElseIf (character=" " And False=quote_open And old_character <> " ") Or end_of_arguments Then
-			// An argument name Or a value is complete. Next argument begins (Or a value To the current argument begins)
-            If collect_value Then
-				// We were collecting a value For an argument that was defined in the previous "word".
-				// In this Case, argument should be defined, so I'm just assuming it's Not NULL. TODO: Maybe add a check For this?
-				argument\value = ParseCommandLineArguments_Unescape(argument_value)
-				collect_value = False
-				argument = NULL // We are done handling this argument
+        ElseIf (character=" " And False=quote_open And old_character <> " ") Or end_of_options Then
+			// An option name Or an argument is complete. Next option begins (Or an argument To the current option begins)
+            If collect_argument Then
+				// We were collecting an argument For an option that was defined in the previous "word".
+				// In this Case, option should be defined, so I'm just assuming it's Not NULL. TODO: Maybe add a check For this?
+				option\argument = ParseCommandLineOptions_Unescape(option_argument)
+				collect_argument = False
+				option = NULL // We are done handling this option
 			Else
-				// We were collecting an argument name (Or a nameless argument value).
-				argument_name = ParseCommandLineArguments_Unescape(argument_name) // Argument names should Not contain quotes ("), but do the unescaping just in Case If the name happened To have quotes.
-				If "-" = Left(argument_name, 1) Then
-					// The name is either a long argument name (e.g. "--argument") Or a Short one (e.g. "-a")
-					argument = getCommandLineArgument(argument_name) // This Function can handle both Short And long names.
-					If NULL = argument Then Return False // Argument with that name was Not found. TODO: Maybe develop a more sensitive way To handle these Errors.
-					argument\present = True
-					CountCommandLineArgumentsPresent + 1
+				// We were collecting an option name (Or a non-option argument).
+				option_name = ParseCommandLineOptions_Unescape(option_name) // Option names should Not contain quotes ("), but do the unescaping just in Case If the name happened To have quotes.
+				If "-" = Left(option_name, 1) Then
+					// The name is either a long option name (e.g. "--option") Or a Short one (e.g. "-o")
+					option = getCommandLineOption(option_name) // This Function can handle both Short And long names.
+					If NULL = option Then Return False // An option with that name was Not found. TODO: Maybe develop a more sensitive way To handle these Errors.
+					option\present = True
+					CountCommandLineOptionsPresent + 1
 					
-					// Check If the argument requires a value with it
-					If argument\requires_value Then collect_value = True
+					// Check If the option requires an argument with it
+					If option\requires_argument Then collect_argument = True
 				Else
-					// Exception: this is Not actually an argument name - it's a value instead, For a nameless argument.
-					If Not CommandLineAcceptNamelessArguments Then Return False // Nameless arguments Not wanted
-					NewCommandLineNamelessArgument(argument_name)
+					// Exception: this is Not actually an option name - it's a non-option argument instead.
+					If Not CommandLineAcceptNonOptionArguments Then Return False // Non-option arguments Not wanted
+					NewCommandLineNonOptionArgument(option_name)
 				EndIf
-				argument_name = "" // Reset so that the Next argument name does Not begin with previous argument name.
+				option_name = "" // Reset so that the Next option name does Not begin with previous option name.
 			EndIf
         Else
 			// Collect the character
-			If collect_value Then
-				// We are collecting a value For an argument that was defined in the previous "word".
-				argument_value + character
+			If collect_argument Then
+				// We are collecting an argument For an option that was defined in the previous "word".
+				option_argument + character
 			Else
 				// We are collecting an argument name.
-				argument_name + character
+				option_name + character
 			EndIf
         EndIf
         old_character = character
     Next i
 	
-	// Ensure that we are Not lacking a value For a previous argument
-	If collect_value Then
-		// We were expecting To entcouter a value For an argument, but apparently the CommandLine String has just ended. As parameter values are mandatory, we cannot accept this.
+	// Ensure that we are Not lacking an argument For a previous option
+	If collect_argument Then
+		// We were expecting To encouter an argument For an option, but apparently the CommandLine String has just ended. As arguments are mandatory, we cannot accept this.
 		Return False
 	EndIf
 
 	Return True
 EndFunction
 
-Function getCommandLineArgumentValue(argument_name$, if_not_present$="")
-	Dim argument.CommandLineArgument
-	argument = getCommandLineArgument(argument_name$)
-	If NULL = argument Then Return if_not_present // This can only happen If the programmer has Not defined the argument they want To look For. Should Not happen, but must check. Can be a typo etc.
-	If Not argument\present Then Return if_not_present // This argument\present is the flag that really tells, If the program was executed with this argument present Or Not.
-	Return argument\value
+Function getCommandLineArgument(option_name$, if_not_present$="")
+	Dim option.CommandLineOption
+	option = getCommandLineOption(option_name$)
+	If NULL = option Then Return if_not_present // This can only happen If the programmer has Not defined the option they want To look For. Should Not happen, but must check. Can be a typo etc.
+	If Not option\present Then Return if_not_present // This option\present is the flag that really tells, If the program was executed with this option present Or Not.
+	Return option\argument
 EndFunction
 
-Function isCommandLineArgumentPresent(argument_name$)
-	Dim argument.CommandLineArgument
-	argument = getCommandLineArgument(argument_name$)
-	If NULL = argument Then Return False // It's Not even defined by the programmer. Probably there's a typo somewhere.
-	Return argument\present // This argument\present is the flag that really tells, If the program was executed with this argument present Or Not.
+Function isCommandLineOptionPresent(option_name$)
+	Dim option.CommandLineOption
+	option = getCommandLineOption(option_name$)
+	If NULL = option Then Return False // It's Not even defined by the programmer. Probably there's a typo somewhere.
+	Return option\present // This option\present is the flag that really tells, If the program was executed with this option present Or Not.
 EndFunction
 
-Function NewCommandLineArgument(long_name$, short_name$, requires_value)
-	Dim argument.CommandLineArgument
+Function NewCommandLineOption(long_name$, short_name$, requires_argument)
+	Dim option.CommandLineOption
 	
-	CountCommandLineArgumentsDefined + 1
-	argument = New(CommandLineArgument)
-	argument\id = ConvertToInteger(argument)
-	argument\long_name = long_name
-	argument\short_name = short_name
-	argument\requires_value = requires_value
+	CountCommandLineOptionsDefined + 1
+	option = New(CommandLineOption)
+	option\id = ConvertToInteger(option)
+	option\long_name = long_name
+	option\short_name = short_name
+	option\requires_argument = requires_argument
 EndFunction
 
 
@@ -203,62 +203,62 @@ EndFunction
 // PRIVATE FUNCTIONS
 //
 
-Function ParseCommandLineArguments_Escape(stri$)
+Function ParseCommandLineOptions_Escape(stri$)
 	stri = Replace(stri, "\\", Chr(1))
 	stri = Replace(stri, "\"+chr(34), Chr(2))
 	Return stri
 EndFunction
 
-Function ParseCommandLineArguments_Unescape(stri$)
+Function ParseCommandLineOptions_Unescape(stri$)
 	stri = Replace(stri, Chr(1), "\")
 	stri = Replace(stri, Chr(2), Chr(34))
 	Return stri
 EndFunction
 
-Function ResetCommandLineArguments(hard=1)
-	Dim argument.CommandLineArgument
+Function ResetCommandLineOptions(hard=1)
+	Dim option.CommandLineOption
 	
-	For argument = Each CommandLineArgument
+	For option = Each CommandLineOption
 		If hard Then
-			Delete argument
+			Delete option
 		Else
-			argument\value = ""
-			argument\present = False
+			option\argument = ""
+			option\present = False
 		EndIf
-	Next argument
-	If hard Then CountCommandLineArgumentsDefined = 0
-	CountCommandLineArgumentsPresent = 0
+	Next option
+	If hard Then CountCommandLineOptionsDefined = 0
+	CountCommandLineOptionsPresent = 0
 EndFunction
 
-Function ResetCommandLineNamelessArguments()
-	Dim nameless_argument.CommandLineNamelessArgument
+Function ResetCommandLineNonOptionArguments()
+	Dim nonoption_argument.CommandLineNonOptionArgument
 	
-	For nameless_argument = Each CommandLineNamelessArgument
-		Delete nameless_argument
-	Next nameless_argument
-	CountCommandLineNamelessArgumentsPresent = 0
+	For nonoption_argument = Each CommandLineNonOptionArgument
+		Delete nonoption_argument
+	Next nonoption_argument
+	CountCommandLineNonOptionArgumentsPresent = 0
 EndFunction
 
-Function NewCommandLineNamelessArgument(value$)
-	Dim nameless_argument.CommandLineNamelessArgument
+Function NewCommandLineNonOptionArgument(argument$)
+	Dim nonoption_argument.CommandLineNonOptionArgument
 	
-	CountCommandLineNamelessArgumentsPresent + 1
-	nameless_argument = New(CommandLineNamelessArgument)
-	nameless_argument\value = value
+	CountCommandLineNonOptionArgumentsPresent + 1
+	nonoption_argument = New(CommandLineNonOptionArgument)
+	nonoption_argument\argument = argument
 EndFunction
 
-Function getCommandLineArgument(name$)
-	Dim argument.CommandLineArgument
+Function getCommandLineOption(name$)
+	Dim option.CommandLineOption
 	
 	name = Lower(name)
-	For argument = Each CommandLineArgument
+	For option = Each CommandLineOption
 		If "--" = Left(name, 2) Then
 			// Look For the long name
-			If argument\long_name = name Then Return argument\id
+			If option\long_name = name Then Return option\id
 		Else
 			// Look For the Short name
-			If argument\short_name = name Then Return argument\id
+			If option\short_name = name Then Return option\id
 		EndIf
-	Next argument
+	Next option
 	Return False
 EndFunction

@@ -171,7 +171,7 @@ Function ParseCommandLineArguments(command_line$="")
 	Return True
 EndFunction
 
-Function GetCommandLineArgumentValue(argument_name$, if_not_present$="")
+Function getCommandLineArgumentValue(argument_name$, if_not_present$="")
 	Dim argument.CommandLineArgument
 	argument = getCommandLineArgument(argument_name$)
 	If NULL = argument Then Return if_not_present // This can only happen If the programmer has Not defined the argument they want To look For. Should Not happen, but must check. Can be a typo etc.

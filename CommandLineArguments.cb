@@ -152,6 +152,13 @@ Function ParseCommandLineArguments(command_line$="")
         EndIf
         old_character = character
     Next i
+	
+	// Ensure that we are Not lacking a value For a previous argument
+	If collect_value Then
+		// We were expecting To entcouter a value For an argument, but apparently the CommandLine String has just ended. As parameter values are mandatory, we cannot accept this.
+		Return False
+	EndIf
+
 	Return True
 EndFunction
 

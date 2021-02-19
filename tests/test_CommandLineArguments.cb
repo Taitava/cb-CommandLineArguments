@@ -9,6 +9,16 @@ Const CBUNIT_STOP_AT = "function" // If test_DefineCommandLineArguments() fails,
 Const valid_argument_definition = "--valid-argument:v+ -a -b+ --long-argument-without-value"
 Global valid_argument_definition_quoted : valid_argument_definition_quoted = Chr(34) + valid_argument_definition + Chr(34)
 
+
+//**
+// This function is every time before calling any of the test_*() functions.
+//*
+Function hook_SetupTest(function_name$)
+	If function_name <> "test_DefineCommandLineArguments" Then // No need To do this For test_DefineCommandLineArguments()
+		DefineCommandLineArguments(valid_argument_definition) // Actually we should already have a definition like this, but do it just in Case test_DefineCommandLineArguments() was Not called For some reason.
+	EndIf
+EndFunction
+
 Function test_DefineCommandLineArguments()
 	
 	// These definitions should _Not_ work:
@@ -25,8 +35,6 @@ Function test_DefineCommandLineArguments()
 EndFunction
 
 Function test_ParseCommandLineArguments()
-	// Setup
-	DefineCommandLineArguments(valid_argument_definition) // Actually we should already have a definition like this, but do it just in Case test_DefineCommandLineArguments() was Not called For some reason.
 	
 	// These arguments should fail:
 	assertNot(ParseCommandLineArguments("--undefined-argument"), "ParseCommandLineArguments() should n"+"ot accept undefined argument names.")
@@ -51,6 +59,20 @@ Function test_ParseCommandLineArguments()
 	assertEquals(getCommandLineArgumentValue("-v"), "value-with"+Chr(34)+"quote-in-it") // Note: one quote in the middle, but no \
 	assert(ParseCommandLineArguments("-v value\\with\\backslashes"), "ParseCommandLineArguments() should be able To handle values with escaped backslashes.")
 	assertEquals(getCommandLineArgumentValue("-v"), "value\with\backslashes")
+EndFunction
+
+Function test_isCommandLineArgumentPresent()
+	// First define that our program has been called with the argument "-v value".
+	ParseCommandLineArguments("-v value")
+	
+	// These arguments should be present:
+	assert(isCommandLineArgumentPresent("-v"), "isCommandLineArgumentPresent() should notice that -v is present.")
+	assert(isCommandLineArgumentPresent("--valid-argument"), "isCommandLineArgumentPresent() should notice that --valid-argument is present.")
+	
+	// These arguments should Not be present:
+	assertNot(isCommandLineArgumentPresent("--non-existing-argument"), "isCommandLineArgumentPresent() should notice that --non-existing-argument is not present.")
+	assertNot(isCommandLineArgumentPresent("-a"), "isCommandLineArgumentPresent() should notice that -a is not present.")
+	assertNot(isCommandLineArgumentPresent("-b"), "isCommandLineArgumentPresent() should notice that -b is not present.")
 EndFunction
 
 

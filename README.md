@@ -2,12 +2,13 @@
 
 A [POSIX style](https://pubs.opengroup.org/onlinepubs/9699919799/basedefs/V1_chap12.html) commandline option/argument parser for [CoolBasic](https://coolbasic.com).
 
-Say that you call your program from the commandline like this: `MyProgram.exe --output-file "C:\My output.txt" -c 1 --verbose -n`
+Say that you call your program from the commandline like this: `MyProgram.exe --output-file "C:\My output.txt" -c 1 -n --verbose -xyz`
 This library helps you parse that string of options and arguments like so:
  - `--output-file` is a long option (can have a short alias too, e.g. `-o`) that takes an argument. The argument happens to contain a space, so it's enclosed in double quotes. CLA removes the double quotes at the end for you.
  - `-c` is a short option (can have a long alias too, e.g.  `--count`) and takes an argument. No quotes are needed for this particular argument.
- - `--verbose` is a long option without an argument.
  - `-n` is a short option without an argument.
+ - `--verbose` is a long option without an argument.
+ - `-xyz` are three short options joined together. It's the same as `-x -y -z`, and the order does not matter, it could be e.g. `-zxy` too. The last option can also have an argument assigned to it: `-xyz some-argument`. 
 
 While CoolBasic programs are designed for Windows only, this library is still designed not to use the Windows style command line options (e.g. `MyProgram.exe /N`). I'm just more familiar with the POSIX style.
 

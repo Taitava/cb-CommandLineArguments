@@ -7,7 +7,7 @@ Const CBUNIT_FORCE_VARIABLE_DECLARATION = 1
 Const CBUNIT_STOP_AT = "function" // If test_DefineCommandLineOptions() fails, do not call test_ParseCommandLineOptions().
 
 Const valid_option_definition = "--valid-option:v+ -a -b+ --long-option-without-argument"
-Global valid_option_definition_quoted : valid_option_definition_quoted = Chr(34) + valid_option_definition + Chr(34)
+Global valid_option_definition_quoted$ : valid_option_definition_quoted = Chr(34) + valid_option_definition + Chr(34)
 
 
 //**

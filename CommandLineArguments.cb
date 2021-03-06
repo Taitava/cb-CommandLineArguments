@@ -4,6 +4,11 @@
 // Requires GetWord2() and CountWords2(): http://www.cbrepository.com/codes/code/11/
 //
 
+//
+// OPTIONS
+//
+Global CommandLineAcceptNonOptionArguments // Defaults to false
+
 
 //
 // DEFINITIONS
@@ -21,7 +26,6 @@ Type CommandLineOption
 	Field present // 0: Option Not found in CommandLine(). 1: Option was found.
 EndType
 
-Global CommandLineAcceptNonOptionArguments // Defaults to false
 Global CountCommandLineNonOptionArgumentsPresent
 
 Type CommandLineNonOptionArgument

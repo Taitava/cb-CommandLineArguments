@@ -10,7 +10,7 @@ This library helps you parse that string of options and arguments like so:
  - `-n` is a short option without an argument.
  - `--verbose` is a long option without an argument.
  - `-xyz` are three short options joined together. It's the same as `-x -y -z`, and the order does not matter, it could be e.g. `-zxy` too. The last option can also have an argument assigned to it: `-xyz some-argument`. 
- - `-- terminate options and get everything after two dashes into a single argument` The two dashes (without an option name, meaning separated by a space from whatever comes next) will terminate option parsing and include the rest of the command line into a single non-option argument.
+ - `-- get everything after two dashes into a single argument` The two dashes (without an option name, meaning separated by a space from whatever comes next) will terminate option parsing and include the rest of the command line into a single non-option argument.
 
 While CoolBasic programs are designed for Windows only, this library is still designed not to use the Windows style command line options (e.g. `MyProgram.exe /N`). I'm just more familiar with the POSIX style.
 

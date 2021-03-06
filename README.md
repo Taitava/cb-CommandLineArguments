@@ -26,17 +26,19 @@ You do not need to include anything from the *tests* folder. It contains [unit t
 ## Usage
 
 ### 1. Define your accepted commandline options
-Call `DefineCommandLineOptions(options$)` which takes just one parameter. `options$` is a string consisting of any of the following words:
+Call `DefineCommandLineOptions(options$)` which takes one mandatory parameter (see below for optional parameters). `options$` is a string consisting of any of the following words:
 - `--` denotes a long option name, e.g. `--verbose`.
 - `-` denotes a short option name, e.g. `-v`.
 - `:` denotes both a long and a short option name, e.g. `--verbose:v` (also `--verbose:-v` is valid)
 - `+` after a short/long option name tells that this option takes an argument and the argument is mandatory. E.g. `--output-file+` or `-o+` or `--output-file:-o+`.
-- `*` as a last word in the whole string defines that *non-option arguments* are allowed. Otherwise they are denied.
-- `--` (without a trailing option name) anywhere in the definition string denotes that it's allowed to use `--` in the command line to terminate option parsing, in which case the rest of the command line string will be read as a single argument into an option named `--`.
 - Each word must be separated by a space
-- Complete example: `DefineCommandLineOptions("--verbose:-v -c+ -n *")`
+- Complete example: `DefineCommandLineOptions("--verbose:-v -c+ -n")`
 
-*Non-option arguments*: values in the commandline that do not have an option name assigned with them. For example executing `MyProgram.exe output.txt` uses a *non-option argument* *output.txt*, whereas `MyProgram.exe --output-file output.txt` uses an *option* which has *output.txt* as its *argument*.  Depending on how you want to design your options, you can choose if you want to enable *non-option arguments* or not. They are disabled by default.
+#### All parameters of `DefineCommandLineOptions()`
+- `options$`: Covered above.
+- `accept_non_option_arguments`: Boolean. Whether to accept the existence of non-option arguments in the command line string. Defaults to false.
+	*Non-option arguments*: values in the commandline that do not have an option name assigned with them. For example executing `MyProgram.exe output.txt` uses a *non-option argument* *output.txt*, whereas `MyProgram.exe --output-file output.txt` uses an *option* which has *output.txt* as its *argument*.  Depending on how you want to design your options, you can choose if you want to enable *non-option arguments* or not.
+- `accept_terminating_options`: Boolean. Denotes that it's allowed to use `--` in the command line string to terminate option parsing, in which case the rest of the command line string will be read as a single argument into an option named `--`. Defaults to false.
 
 `DefineCommandLineOptions(options$)` returns true if it was able to understand your option definitions, false otherwise. This phase is just a predefinition, and it does not yet parse the commandline string in any way.
 

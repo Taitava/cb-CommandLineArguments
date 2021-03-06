@@ -27,6 +27,11 @@ Function test_DefineCommandLineOptions()
 	assertNot(DefineCommandLineOptions("--valid-option option-without-dashes-at-the-beginning"), "DefineCommandLineOptions() should n"+"ot accept options that do n"+"ot begin with --")
 	assertNot(DefineCommandLineOptions("-"), "DefineCommandLineOptions() should n"+"ot accept options that do n"+"ot have a name After -")
 	assertNot(DefineCommandLineOptions("--valid-option -"), "DefineCommandLineOptions() should n"+"ot accept options that do n"+"ot have a name After -")
+	assertNot(DefineCommandLineOptions("--"), "DefineCommandLineOptions() should n"+"ot accept options that do n"+"ot have a name After --")
+	assertNot(DefineCommandLineOptions("--valid-option --"), "DefineCommandLineOptions() should n"+"ot accept options that do n"+"ot have a name After --")
+	assertNot(DefineCommandLineOptions("--:"), "DefineCommandLineOptions() should n"+"ot accept an option --: that lacks both a long name And a Short name.")
+	assertNot(DefineCommandLineOptions("--option:"), "DefineCommandLineOptions() should n"+"ot accept an option --option: that lacks a Short name.")
+	assertNot(DefineCommandLineOptions("--:o"), "DefineCommandLineOptions() should n"+"ot accept an option --:o that lacks a long name.")
 	
 	// These definitions _should_ work:
 	If assert(DefineCommandLineOptions(valid_option_definition), "DefineCommandLineOptions() should understand "+valid_option_definition_quoted) Then

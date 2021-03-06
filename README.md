@@ -2,9 +2,10 @@
 
 A [POSIX style](https://pubs.opengroup.org/onlinepubs/9699919799/basedefs/V1_chap12.html) commandline option/argument parser for [CoolBasic](https://coolbasic.com).
 
-Say that you call your program from the commandline like this: `MyProgram.exe --output-file "C:\My output.txt" -c 1 -n --verbose -xyz -- get everything after two dashes into a single argument`
+Say that you call your program from the commandline like this: `MyProgram.exe --output-file "C:\My output.txt" "a value" -c 1 -n --verbose -xyz -- get everything after two dashes into a single argument`
 This library helps you parse that string of options and arguments like so:
  - `--output-file` is a long option (can have a short alias too, e.g. `-o`) that takes an argument. The argument happens to contain a space, so it's enclosed in double quotes. CLA removes the double quotes at the end for you.
+ - `"a value"` is a *non-option argument*, meaning that it is not tied into any named option.
  - `-c` is a short option (can have a long alias too, e.g.  `--count`) and takes an argument. No quotes are needed for this particular argument.
  - `-n` is a short option without an argument.
  - `--verbose` is a long option without an argument.

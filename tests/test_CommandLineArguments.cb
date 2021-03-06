@@ -27,8 +27,6 @@ Function test_DefineCommandLineOptions()
 	assertNot(DefineCommandLineOptions("--valid-option option-without-dashes-at-the-beginning"), "DefineCommandLineOptions() should n"+"ot accept options that do n"+"ot begin with --")
 	assertNot(DefineCommandLineOptions("-"), "DefineCommandLineOptions() should n"+"ot accept options that do n"+"ot have a name After -")
 	assertNot(DefineCommandLineOptions("--valid-option -"), "DefineCommandLineOptions() should n"+"ot accept options that do n"+"ot have a name After -")
-	assertNot(DefineCommandLineOptions("--"), "DefineCommandLineOptions() should n"+"ot accept options that do n"+"ot have a name After --")
-	assertNot(DefineCommandLineOptions("--valid-option --"), "DefineCommandLineOptions() should n"+"ot accept options that do n"+"ot have a name After --")
 	
 	// These definitions _should_ work:
 	If assert(DefineCommandLineOptions(valid_option_definition), "DefineCommandLineOptions() should understand "+valid_option_definition_quoted) Then
@@ -45,7 +43,9 @@ Function test_ParseCommandLineOptions()
 	assertNot(ParseCommandLineOptions("-v"), "Option -v is defined to have an argument associated with it. ParseCommandLineOptions() should n"+"ot accept a CommandLine with -v without an argument.")
 	assertNot(ParseCommandLineOptions("invalid-argument"), "ParseCommandLineOptions() should n"+"ot accept non-option arguments because DefineCommandLineOptions() was Not called with a definition String ending with a *")
 	assertNot(ParseCommandLineOptions("-v valid-argument invalid-argument"), "ParseCommandLineOptions() should n"+"ot accept non-option arguments because DefineCommandLineOptions() was Not called with a definition String ending with a *")
+	assertNot(ParseCommandLineOptions("-v valid-argument -- cannot terminate options now"), "ParseCommandLineOptions() should n"+"ot accept terminating options with -- because DefineCommandLineOptions() was Not called with a definition String containing --")
 	assertNot(ParseCommandLineOptions("-v valid-argument - incorrect usage of a Short option dash"), "ParseCommandLineOptions() should n"+"ot accept - without a Short option name.")
+	
 	
 	// Change so that non-option arguments will be allowed
 	CommandLineAcceptNonOptionArguments = True
@@ -73,6 +73,12 @@ Function test_ParseCommandLineOptions()
 	assert(isCommandLineOptionPresent("-c"), "CommandLine option -c should be present.")
 	assert(isCommandLineOptionPresent("-v"), "CommandLine option -v should be present.")
 	assertEquals(getCommandLineArgument("-v", "Not-found"), "test", "CommandLine option should have an argument 'test', but the argument is b$ instead.")
+	
+	// Check that terminating options work
+	CommandLineAcceptTerminatingOptions = True
+	assert(ParseCommandLineOptions("-v valid-argument -- terminating options is now enabled"), "ParseCommandLineOptions() should accept terminating options with --")
+	assert(isCommandLineOptionPresent("--"), "CommandLine option -- should be present.")
+	assertEquals(getCommandLineArgument("--"), "terminating options is now enabled")
 EndFunction
 
 Function test_getCommandLineArgument()

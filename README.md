@@ -2,13 +2,14 @@
 
 A [POSIX style](https://pubs.opengroup.org/onlinepubs/9699919799/basedefs/V1_chap12.html) commandline option/argument parser for [CoolBasic](https://coolbasic.com).
 
-Say that you call your program from the commandline like this: `MyProgram.exe --output-file "C:\My output.txt" -c 1 -n --verbose -xyz`
+Say that you call your program from the commandline like this: `MyProgram.exe --output-file "C:\My output.txt" -c 1 -n --verbose -xyz -- get everything after two dashes into a single argument`
 This library helps you parse that string of options and arguments like so:
  - `--output-file` is a long option (can have a short alias too, e.g. `-o`) that takes an argument. The argument happens to contain a space, so it's enclosed in double quotes. CLA removes the double quotes at the end for you.
  - `-c` is a short option (can have a long alias too, e.g.  `--count`) and takes an argument. No quotes are needed for this particular argument.
  - `-n` is a short option without an argument.
  - `--verbose` is a long option without an argument.
  - `-xyz` are three short options joined together. It's the same as `-x -y -z`, and the order does not matter, it could be e.g. `-zxy` too. The last option can also have an argument assigned to it: `-xyz some-argument`. 
+ - `-- terminate options and get everything after two dashes into a single argument` The two dashes (without an option name, meaning separated by a space from whatever comes next) will terminate option parsing and include the rest of the command line into a single non-option argument.
 
 While CoolBasic programs are designed for Windows only, this library is still designed not to use the Windows style command line options (e.g. `MyProgram.exe /N`). I'm just more familiar with the POSIX style.
 
@@ -31,6 +32,7 @@ Call `DefineCommandLineOptions(options$)` which takes just one parameter. `optio
 - `:` denotes both a long and a short option name, e.g. `--verbose:v` (also `--verbose:-v` is valid)
 - `+` after a short/long option name tells that this option takes an argument and the argument is mandatory. E.g. `--output-file+` or `-o+` or `--output-file:-o+`.
 - `*` as a last word in the whole string defines that *non-option arguments* are allowed. Otherwise they are denied.
+- `--` (without a trailing option name) anywhere in the definition string denotes that it's allowed to use `--` in the command line to terminate option parsing, in which case the rest of the command line string will be read as a single argument into an option named `--`.
 - Each word must be separated by a space
 - Complete example: `DefineCommandLineOptions("--verbose:-v -c+ -n *")`
 

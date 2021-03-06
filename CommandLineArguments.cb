@@ -8,6 +8,7 @@
 // OPTIONS
 //
 Global CommandLineAcceptNonOptionArguments // Defaults to false
+Global CommandLineAcceptTerminatingOptions // Whether to accept "--" (separated by spaces) to indicate that all trailing arguments will be considered as a single argument.
 
 
 //
@@ -40,14 +41,15 @@ EndType
 //**
 // Defines commandline options (an 'option' has a name and may have an 'argument', i.e. value). Non-option arguments are not predefined, they can be accessed currently only via the CommandLineNonOptionArgument type list (@see https://github.com/Taitava/cb-CommandLineArguments/issues/6).
 //
-// @param string arguments Denotes all possible named arguments in a format like this: "--option --another-option --option-with-shortcut-letter:a --option-requiring-argument+ -b" The last option "-b" is an example of an option that does not have a long name alias. If you put * as the _last_ word, non-option arguments will be accepted, otherwise not.
+// @param string arguments Denotes all possible named arguments in a format like this: "--option --another-option --option-with-shortcut-letter:a --option-requiring-argument+ -b" The last option "-b" is an example of an option that does not have a long name alias. If you include "--" (separated by spaces from other words in the string) terminating options will be enabled. If you put * as the _last_ word, non-option arguments will be accepted, otherwise not.
 // @return bool True if parsing options succeeded, false if some option did not begin with "--" or "-" or if you defined "-" or "--" without a trailing option name.
 //*
 Function DefineCommandLineOptions(options$)
-	Dim i, count_options, option$, requires_argument, long_name$, short_name$
+	Dim i, count_options, option$, requires_argument, long_name$, short_name$, skip_option
 	
 	ResetCommandLineOptions()
 	CommandLineAcceptNonOptionArguments = False
+	CommandLineAcceptTerminatingOptions = False
 	count_options = CountWords2(options, " ")
 	For i = 1 To count_options
 		option = GetWord2(options, i, " ")
@@ -68,6 +70,7 @@ Function DefineCommandLineOptions(options$)
 		// Determine the argument's name
 		short_name = ""
 		long_name = ""
+		skip_option = False
 		If "--" = Left(option, 2) Then
 			// Option has a long name
 			// Check If it has a Short alternative too
@@ -80,7 +83,12 @@ Function DefineCommandLineOptions(options$)
 				// Only a long name is defined
 				long_name = option
 			EndIf
-			If long_name = "--" Then Return False // Name cannot be empty, it needs letters too.
+			If long_name = "--" Then
+				// Allow terminating options with "--"
+				CommandLineAcceptTerminatingOptions = True
+				NewCommandLineOption("--", "", False)
+				skip_option = True // We don't want To define -- As an option.
+			EndIf
 		ElseIf "-" = Left(option, 1) Then
 			// The argument has only a Short name
 			short_name = option
@@ -91,7 +99,7 @@ Function DefineCommandLineOptions(options$)
 		EndIf
 		
 		// Define the argument
-		NewCommandLineOption(long_name, short_name, requires_argument)
+		If Not skip_option Then NewCommandLineOption(long_name, short_name, requires_argument)
 	Next i
 	
 	Return True
@@ -137,7 +145,25 @@ Function ParseCommandLineOptions(command_line$="")
 			Else
 				// We were collecting an option name (Or a non-option argument).
 				option_name = ParseCommandLineOptions_Unescape(option_name) // Option names should Not contain quotes ("), but do the unescaping just in Case If the name happened To have quotes.
-				If "-" = Left(option_name, 1) Then
+				If "--" = option_name Then
+					// Terminate the options: interpret the rest of the command Line As a single non-option argument
+					// But first check that terminating is allowed
+					If CommandLineAcceptTerminatingOptions Then
+						// It's allowed
+						option = MarkCommandLineOptionPresent("--")
+						If option = NULL Then
+							// The terminate feature is enabled by directly setting CommandLineAcceptTerminatingOptions To True (Not via DefineCommandLineOptions()).
+							// It means that "--" option is Not defined, so we should define it. TODO: Consider that this might Not be the Right place To do this kind of exception. Maybe find another solution? A setter Function For CommandLineAcceptTerminatingOptions perhaps?
+							option = NewCommandLineOption("--", "", False)
+							option\present = True
+						EndIf
+						option\argument = ParseCommandLineOptions_Unescape(Trim(Mid(command_line, i))) // The rest of the command Line String
+						Exit // Break from For i As we are all done now
+					Else
+						// Terminating is Not allowed
+						Return False
+					EndIf
+				ElseIf "-" = Left(option_name, 1) Then
 					// The name is either a long option name (e.g. "--option") Or a Short one (e.g. "-o")
 					If "--" = Left(option_name, 2) Then
 						// It's a long name, just a single option
@@ -210,6 +236,8 @@ Function NewCommandLineOption(long_name$, short_name$, requires_argument)
 	option\long_name = long_name
 	option\short_name = short_name
 	option\requires_argument = requires_argument
+	
+	Return option\id
 EndFunction
 
 

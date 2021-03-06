@@ -145,6 +145,7 @@ Function ParseCommandLineOptions(command_line$="")
 						If NULL = option Then Return False // An option with that name was Not found. TODO: Maybe develop a more sensitive way To handle these Errors.
 					Else
 						// It's a Short name, And it can sometimes contain multiple option names joined together (e.g. "-abc", equivalent To "-a -b -c")
+						If "-" = option_name Then Return False // Incorrect set of Short options: it does Not contain any characters After -
 						For n = 2 To Len(option_name) // Start from 2 instead of 1 because we want To skip the preceding -
 							short_option_name = "-" + Mid(option_name, n, 1)
 							option = MarkCommandLineOptionPresent(short_option_name)
